@@ -147,6 +147,20 @@ bool IsNewCandle() {
   BarsOnChart = Bars;
   return(true); 
 }
+//+------------------------------------------------------------------+
+//| There can be trades on multiple pairs going on. The OrderEntry
+//| function's OrdersTotal is going to return info on all the 
+//| currencypair orders. Ideally, we just want the currency pair 
+//| this EA is working on. The below function does that.
+//+------------------------------------------------------------------+
+int OpenOrdersThisPair(string pair) {
+  int total = 0;
+  for (int i=OrdersTotal()-1; i>=0; i--) {
+   OrderSelect(i, SELECT_BY_POS, MODE_TRADES);
+   if (OrderSymbol() == pair) total++;
+  }
+  return total;
+} 
 
 //+------------------------------------------------------------------+
 //| OrderEntry generic function
@@ -162,7 +176,9 @@ void OrderEntry(int direction) {
 
     // Buy, Crossed Up : 
     if (direction == 0) {
-      if (OrdersTotal() == 0) { // No more on going trade.
+
+      // This can be any number. Eg. 3. We limit to 3 orders per currency pair.
+      if (OpenOrdersThisPair(Symbol()) == 0) { // No more on going trade.
 
          OrderSend(
            Symbol(),            // symbol, string, Put the exact . 
@@ -206,7 +222,8 @@ void OrderEntry(int direction) {
    
     // Sell, Crossed down : 
     if (direction == 1) {
-      if (OrdersTotal() == 0) {  // No more on going trade.
+      // This can be any number. Eg. 3. We limit to 3 orders per currency pair.
+      if (OpenOrdersThisPair(Symbol()== 0)) {  // No more on going trade.
          OrderSend(
            Symbol(),
            OP_SELL,
