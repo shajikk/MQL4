@@ -23,7 +23,6 @@ extern int PipsToLockIn=5;
 extern bool UseTrailingStop = true;
 extern int WhenToTrail      = 100;
 extern int TrailAmount      = 50; 
-// FIXME
 
 extern int FastMA            = 5;
 extern int FastMaShift       = 0;
