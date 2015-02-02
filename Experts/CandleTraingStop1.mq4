@@ -423,8 +423,13 @@ void CheckForMaTrade() {
 
     // Use candle 1. Candle 0 is always changing. Candle 1
     // stable.
+
     // *** Can have 4 hr moving average also **** 
+    // Access 4 hr moving average. 
+    // 
     // double PreviousFast = iMA( NULL, 240, FastMA, FastMaShift, FastMaMethod...)
+
+
     // Fast
     double PreviousFast = iMA( NULL, 0, FastMA, FastMaShift, FastMaMethod,
          FastMaAppliedTo, 2
