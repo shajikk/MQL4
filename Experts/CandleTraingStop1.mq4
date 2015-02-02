@@ -2,6 +2,7 @@
 //|                                            CandleTraingStop1.mq4 |
 //|                                               Shaji Kunjumohamed |
 //+------------------------------------------------------------------+
+
 #property copyright "Shaji Kunjumohamed"
 #property version   "1.00"
 #property strict
