@@ -202,6 +202,8 @@ void OrderEntry(int direction) {
         Print("Order Placed #", BuyTicketOrder);
       } else {
         Print("Order Send Failed, error #", GetLastError());
+        Print("LotSize #", LotSize );
+        Print("pips_to_bsl #", pips_to_bsl );
 
       }
     }
@@ -217,6 +219,8 @@ void OrderEntry(int direction) {
         Print("Order Placed #", SellTicketOrder);
       } else {
         Print("Order Send Failed, error #", GetLastError());
+        Print("LotSize #", LotSize);
+        Print("pips_to_ssl #", pips_to_bsl );
 
       }
     }
