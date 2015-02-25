@@ -13,6 +13,7 @@
 
 double         pips;
 extern int     SR_band=5;
+extern color   Clr=Magenta;
 
 //+------------------------------------------------------------------+
 //| Config class
@@ -80,10 +81,38 @@ class ParseTS {
   public:
     TS_Element* current;
     TS_Element* previous;
-    TS_Element* TS_sparase[];
+    TS_Element* TS_sparse[];
+    bool    previous_already_added;
     void    first_parse(int limit);
+    void    Mark_resistance(void);
+    void    push_sparse(TS_Element* element);
     void    compare(void);
+
+    ParseTS() { this.previous_already_added = false; };
 };
+
+void ParseTS::push_sparse(TS_Element* element) {
+  int size=ArraySize(this.TS_sparse);
+  ArrayResize(this.TS_sparse, size+1);
+  this.TS_sparse[size] = element;
+  //size=ArraySize(this.TS_sparse);
+  //Print("size = " + size + "\n");
+}
+
+
+void ParseTS::Mark_resistance() {
+  int size=ArraySize(this.TS_sparse);
+
+  for (int i = 0; i<=size-1; i++) {
+    TS_Element* element = this.TS_sparse[i]; 
+    Print("loc = " + i + "\n");
+    Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
+    Print("val = " + element.value + "\n");
+    ObjectCreate("p_"+i, OBJ_ARROW_DOWN,0,element.t, element.value);
+    ObjectSet("p_"+i, OBJPROP_COLOR, Clr);
+  }
+
+}
 
 void ParseTS::compare(void) {
 
@@ -117,6 +146,7 @@ void ParseTS::compare(void) {
        (this.previous.upper_limit >= this.current.lower_limit &&
         this.previous.lower_limit <= this.current.lower_limit)) {
      this.previous = this.current;
+     return;
    } 
 
 
@@ -135,24 +165,29 @@ void ParseTS::compare(void) {
    */
 
    if (this.current.lower_limit > this.previous.upper_limit) {
+     this.previous_already_added = false;
      this.previous = this.current;
+     return;
    } 
 
    /*
-                       ---------------  prev ul  
+     ---------------  prev ul  
 
 
 
-                       ---------------  prev ll  
+     ---------------  prev ll  
 
-     curr ul -------------
+                         curr ul -------------
 
                 
                                                   
-     curr ll -------------                       
+                         curr ll -------------                       
    */
    if (this.current.upper_limit < this.previous.lower_limit) {
-     // Store this.previous
+     //this.check_previous();
+     if (!this.previous_already_added) this.push_sparse(this.previous);
+     this.previous = this.current;
+     this.previous_already_added = true;
    } 
 
 }
@@ -194,6 +229,7 @@ void ParseTS::first_parse(int limit) {
         
        
         this.current.value = highest;
+        this.current.t = t;
         this.current.fix_bands();
 
         if (this.previous != NULL) {
@@ -202,10 +238,6 @@ void ParseTS::first_parse(int limit) {
           // current becomes previous
           this.previous = this.current;
         }
-
-        //double upper_limit = highest + cfg.half_band;
-        //double lower_limit = highest - cfg.half_band;
-
 
       } // if
       
@@ -217,6 +249,9 @@ void ParseTS::first_parse(int limit) {
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
 
+ParseTS pts; 
+
+bool flag = false;
 
 int OnCalculate(const int rates_total,
                 const int prev_calculated,
@@ -244,7 +279,6 @@ int OnCalculate(const int rates_total,
 
     int limit = Bars - counted_bars;
 
-    ParseTS pts; 
 
     if (limit == 1) {
     
@@ -252,7 +286,10 @@ int OnCalculate(const int rates_total,
 
     } else {
       pts.first_parse(limit);
+      pts.Mark_resistance();
     }
+
+
 
    
 //--- return value of prev_calculated for next call
