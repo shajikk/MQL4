@@ -32,8 +32,11 @@ void SR_config::set_pips(void) {
   // Get the ticksize of this broker, depending on pair.
   double ticksize = MarketInfo(Symbol(), MODE_TICKSIZE); 
 
-  // To support older platform, where ticksize == pips
-  this.pips = (ticksize == 0.00001 || ticksize == 0.001) ?  ticksize*10 : ticksize;
+  if (ticksize == 0.00001 || ticksize == 0.001) {
+    this.pips = ticksize*10;
+  } else {
+    this.pips = ticksize; 
+  }
 
   this.half_band = (SR_band/2) * this.pips;
 }
@@ -58,11 +61,17 @@ class TS_Element {
 
   public:
     datetime t;
+    double Open;
+    double Close;
+    double High;
+    double Low;
+
     double upper_limit;
     double lower_limit;
     double value;
     int    weight;
     void   fix_bands(void);
+    void   set_fields(double h, double l, double o, double c, datetime dt);
 };
 
 
@@ -70,6 +79,15 @@ void TS_Element::fix_bands(void) {
     this.upper_limit = this.value + cfg.half_band;
     this.lower_limit = this.value - cfg.half_band;
 }
+
+void TS_Element::set_fields(double h, double l, double o, double c, datetime dt) {
+    this.Open  = o;
+    this.Close = c;
+    this.High  = h;
+    this.Low   = l;
+    this.t     = dt;
+}
+
 
 
 //+------------------------------------------------------------------+
@@ -179,6 +197,7 @@ class ParseTS : public SR_Base {
     TS_Element* current;
     TS_Element* previous;
     TS_Element* TS_sparse[];
+    TS_Element* buffer[];
     bool    previous_already_added;
     void    first_parse(int limit);
     void    Mark_resistance(void);
@@ -202,9 +221,9 @@ void ParseTS::Mark_resistance() {
 
   for (int i = 0; i<=size-1; i++) {
     TS_Element* element = this.TS_sparse[i]; 
-    Print("loc = " + i + "\n");
-    Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
-    Print("val = " + element.value + "\n");
+    //Print("loc = " + i + "\n");
+    //Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
+    //Print("val = " + element.value + "\n");
     ObjectCreate("p_"+i, OBJ_ARROW_DOWN,0,element.t, element.value);
     ObjectSet("p_"+i, OBJPROP_COLOR, Clr);
   }
@@ -291,43 +310,53 @@ void ParseTS::compare(void) {
 
 void ParseTS::first_parse(int limit) {
 
-    for (int i=limit-1; i>=0; i--) {
+    for (int i=limit-1; i>0; i--) {
 
-      if ((i % 7) == 0 && (limit-1 - i) > (7+1)) {
+      TS_Element* buf;
+      buf = new TS_Element();
+      buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
+      this.push_array(buf, this.buffer); 
 
-        double highest;
-        int i_track;
-        datetime t;
+      int size = this.check_array_size(this.buffer);
 
-        /*  Example
-        i=22
-        i=21 => 22 23 24 25 26 27 28  <= i+1+7-1                         
-        i=14 => 15 16 17 18 19 20 21
-        i=7  =>  8  9 10 11 12 13 14   
-        i=0  =>  1  2  3  4  5  6  7 
-        */
+      if (size == 7) {
 
-        for (int j = i+1; j<= (i+1+7-1) ; j++) {
-          double sample = (Close[j] > Open[j]) ? Close[j] : Open[j];
+        double highest = 0.0;
+        int sample = 0;
 
-          if (j == i+1) {
-            highest = sample;           
-            i_track = j;           
-            t = Time[j];           
+
+        for (int j = 0; j < size; j++) {
+
+          if (this.buffer[j].Close > this.buffer[j].Open) {
+            this.buffer[j].value = this.buffer[j].Close;
+          } else {
+            this.buffer[j].value = this.buffer[j].Open;
+          } 
+
+          // Initialize
+          if (j == 0) { 
+            highest = this.buffer[j].value;
+            sample  = 0;
           }
 
-          highest = (sample > highest) ? sample : highest;
-          i_track = (sample > highest) ? j : i_track;
-          t       = (sample > highest) ? Time[j] : t;
+          if (this.buffer[j].value > highest) {
+            highest = this.buffer[j].value;
+            sample = j;
+          }
+
         }
 
-        //Print("highest = " + highest + " Num = " + i_track + "\n");
-        this.current = new TS_Element();
-        
-       
-        this.current.value = highest;
-        this.current.t = t;
+         
+        for (int j = 0; j < size; j++) {
+          if (j != sample) {
+            delete this.buffer[j];
+          }  
+        } 
+
+        this.current = this.buffer[sample];
         this.current.fix_bands();
+        ArrayResize(buffer, 0); // Clear array memory
+
 
         if (this.previous != NULL) {
           this.compare();
@@ -336,9 +365,9 @@ void ParseTS::first_parse(int limit) {
           this.previous = this.current;
         }
 
-      } // if
-      
-    } // for
+      } // check for  buff size
+
+    } // for loop
 
 }
 
@@ -369,8 +398,8 @@ int OnCalculate(const int rates_total,
     static int BarsOnChart = 0; // Initialized once.
 
     if (BarsOnChart == 0) {
-      //pts.first_parse(Bars);
-      //pts.Mark_resistance();
+      pts.first_parse(Bars);
+      pts.Mark_resistance();
     } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
     }
     
