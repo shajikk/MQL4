@@ -36,7 +36,6 @@ void SR_config::set_pips(void) {
   this.pips = (ticksize == 0.00001 || ticksize == 0.001) ?  ticksize*10 : ticksize;
 
   this.half_band = (SR_band/2) * this.pips;
-  Print("Test");
 }
 
 SR_config cfg;
@@ -72,11 +71,109 @@ void TS_Element::fix_bands(void) {
     this.lower_limit = this.value - cfg.half_band;
 }
 
+
+//+------------------------------------------------------------------+
+//| Base class for all other derive classes.
+//+------------------------------------------------------------------+
+
+
+class SR_Base {
+
+  public:
+    template<typename T>
+    void    push_array(T element, T &arr[]);
+
+    template<typename T>
+    T pop_array(T &arr[]);
+
+    template<typename T>
+    T pop0_array(T &arr[]);
+
+    template<typename T>
+    int check_array_size(T &arr[]);
+ 
+    template<typename T>
+    void deleteN0_array(T &arr[], int n);
+
+    template<typename T>
+    void debug_array(T &arr[]);
+
+};
+
+template<typename T>
+void SR_Base::push_array(T element, T &arr[]) {
+  int size=ArraySize(arr);
+  ArrayResize(arr, size+1);
+  arr[size] = element;
+}
+
+template<typename T>
+T SR_Base::pop_array(T &arr[]) {
+
+  int size=ArraySize(arr);
+
+  if (size != 0) {
+    T element = arr[size-1];
+    ArrayResize(arr, size-1);
+    return  element;
+  }
+  return NULL;
+  
+}
+
+template<typename T>
+T SR_Base::pop0_array(T &arr[]) {
+
+  int size=ArraySize(arr);
+
+  if (size != 0) {
+    ArraySetAsSeries(arr, true);
+    T element = arr[size-1];
+    ArrayResize(arr, size-1);
+    ArraySetAsSeries(arr, false);
+    return  element;
+  }
+  return NULL;
+  
+}
+
+
+template<typename T>
+  void SR_Base::deleteN0_array(T &arr[], int n) {
+
+  int size=ArraySize(arr);
+
+  if (size != 0 && n <= size) {
+    ArraySetAsSeries(arr, true);
+    ArrayResize(arr, size-n);
+    ArraySetAsSeries(arr, false);
+  }
+  
+}
+
+
+template<typename T>
+  int SR_Base::check_array_size(T &arr[]) {
+  return ArraySize(arr);
+}
+
+
+// ------ Function for testing ------
+template<typename T>
+void SR_Base::debug_array(T &arr[]) {
+
+  int size=ArraySize(arr);
+  for (i = 0; i < size; i++) {
+    Print("DEBUG idx = " + i + " Value = " + arr[i] + "\n"); 
+  }
+
+}
+
 //+------------------------------------------------------------------+
 //| Parse time series
 //+------------------------------------------------------------------+
 
-class ParseTS {
+class ParseTS : public SR_Base {
 
   public:
     TS_Element* current;
@@ -272,10 +369,11 @@ int OnCalculate(const int rates_total,
     static int BarsOnChart = 0; // Initialized once.
 
     if (BarsOnChart == 0) {
-      pts.first_parse(Bars);
-      pts.Mark_resistance();
+      //pts.first_parse(Bars);
+      //pts.Mark_resistance();
     } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
     }
+    
 
     BarsOnChart = Bars;
 
