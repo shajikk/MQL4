@@ -269,29 +269,16 @@ int OnCalculate(const int rates_total,
     // the chart. 
     // When OnCalculate executes, it 
     // updatates counted bars.
-    int counted_bars = IndicatorCounted();
+    static int BarsOnChart = 0; // Initialized once.
 
-    // Error check
-    if (counted_bars<0) return (-1); 
-
-    // This is to make the loop the run the last one candle
-    // coming in over and over again.
-
-    int limit = Bars - counted_bars;
-
-
-    if (limit == 1) {
-    
-      // to do      
-
-    } else {
-      pts.first_parse(limit);
+    if (BarsOnChart == 0) {
+      pts.first_parse(Bars);
       pts.Mark_resistance();
+    } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
     }
 
+    BarsOnChart = Bars;
 
-
-   
 //--- return value of prev_calculated for next call
    return(rates_total);
   }
