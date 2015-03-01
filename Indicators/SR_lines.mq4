@@ -13,82 +13,8 @@
 
 double         pips;
 extern int     SR_band=5;
+extern int     window=7;
 extern color   Clr=Magenta;
-
-//+------------------------------------------------------------------+
-//| Config class
-//+------------------------------------------------------------------+
-
-class SR_config {
-
-  public:
-    double  pips;
-    double  half_band;
-    void    set_pips(void);
-};
-
-void SR_config::set_pips(void) {
-
-  // Get the ticksize of this broker, depending on pair.
-  double ticksize = MarketInfo(Symbol(), MODE_TICKSIZE); 
-
-  if (ticksize == 0.00001 || ticksize == 0.001) {
-    this.pips = ticksize*10;
-  } else {
-    this.pips = ticksize; 
-  }
-
-  this.half_band = (SR_band/2) * this.pips;
-}
-
-SR_config cfg;
-
-//+------------------------------------------------------------------+
-//| Custom indicator initialization function                         |
-//+------------------------------------------------------------------+
-
-int OnInit() {
-
-   cfg.set_pips();
-
-   return(INIT_SUCCEEDED);
-  }
-
-//+------------------------------------------------------------------+
-//| Time series element
-//+------------------------------------------------------------------+
-class TS_Element {
-
-  public:
-    datetime t;
-    double Open;
-    double Close;
-    double High;
-    double Low;
-
-    double upper_limit;
-    double lower_limit;
-    double value;
-    int    weight;
-    void   fix_bands(void);
-    void   set_fields(double h, double l, double o, double c, datetime dt);
-};
-
-
-void TS_Element::fix_bands(void) {
-    this.upper_limit = this.value + cfg.half_band;
-    this.lower_limit = this.value - cfg.half_band;
-}
-
-void TS_Element::set_fields(double h, double l, double o, double c, datetime dt) {
-    this.Open  = o;
-    this.Close = c;
-    this.High  = h;
-    this.Low   = l;
-    this.t     = dt;
-}
-
-
 
 //+------------------------------------------------------------------+
 //| Base class for all other derive classes.
@@ -115,6 +41,12 @@ class SR_Base {
 
     template<typename T>
     void debug_array(T &arr[]);
+
+    template<typename T>
+    void overwrite_last_element(T element, T &arr[]);
+
+    template<typename T>
+    T SR_Base::get_last_element(T &arr[]);
 
 };
 
@@ -176,6 +108,26 @@ template<typename T>
 }
 
 
+template<typename T>
+  void SR_Base::overwrite_last_element(T element, T &arr[]) {
+  int size =  ArraySize(arr);
+  if (size > 0) {
+    delete arr[size-1];
+    arr[size-1] = element;
+  }
+}
+
+
+template<typename T>
+  T SR_Base::get_last_element(T &arr[]) {
+  int size =  ArraySize(arr);
+  if (size > 0) {
+    return arr[size-1];
+  }
+  return NULL;
+}
+
+
 // ------ Function for testing ------
 template<typename T>
 void SR_Base::debug_array(T &arr[]) {
@@ -185,6 +137,85 @@ void SR_Base::debug_array(T &arr[]) {
     Print("DEBUG idx = " + i + " Value = " + arr[i] + "\n"); 
   }
 
+}
+
+//+------------------------------------------------------------------+
+//| Config class
+//+------------------------------------------------------------------+
+
+class SR_config : public SR_Base {
+
+  public:
+    double  pips;
+    double  band_value;
+    void    set_pips(void);
+    string  chartObj[];
+   
+};
+
+void SR_config::set_pips(void) {
+
+  // Get the ticksize of this broker, depending on pair.
+  double ticksize = MarketInfo(Symbol(), MODE_TICKSIZE); 
+
+  if (ticksize == 0.00001 || ticksize == 0.001) {
+    this.pips = ticksize*10;
+  } else {
+    this.pips = ticksize; 
+  }
+
+  this.band_value = SR_band * this.pips;
+}
+
+SR_config cfg;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+
+int OnInit() {
+
+   cfg.set_pips();
+
+   return(INIT_SUCCEEDED);
+}
+
+void OnDeinit(const int reason) {
+
+
+  int size=ArraySize(cfg.chartObj);
+
+  for (int i = 0; i<=size-1; i++) {
+    ObjectDelete(cfg.chartObj[i]);
+  }
+
+}
+
+//+------------------------------------------------------------------+
+//| Time series element
+//+------------------------------------------------------------------+
+class TS_Element {
+
+  public:
+    datetime t;
+    double Open;
+    double Close;
+    double High;
+    double Low;
+
+    double upper_limit;
+    double lower_limit;
+    double value;
+    int    weight;
+    void   set_fields(double h, double l, double o, double c, datetime dt);
+};
+
+void TS_Element::set_fields(double h, double l, double o, double c, datetime dt) {
+    this.Open  = o;
+    this.Close = c;
+    this.High  = h;
+    this.Low   = l;
+    this.t     = dt;
 }
 
 //+------------------------------------------------------------------+
@@ -198,13 +229,15 @@ class ParseTS : public SR_Base {
     TS_Element* previous;
     TS_Element* TS_sparse[];
     TS_Element* buffer[];
-    bool    previous_already_added;
+    bool    already_added;
     void    first_parse(int limit);
+    void    calc_resistance(int i);
     void    Mark_resistance(void);
     void    push_sparse(TS_Element* element);
-    void    compare(void);
+    void    compare_resistance(void);
+    
+    ParseTS() { this.already_added = false; };
 
-    ParseTS() { this.previous_already_added = false; };
 };
 
 void ParseTS::push_sparse(TS_Element* element) {
@@ -221,96 +254,49 @@ void ParseTS::Mark_resistance() {
 
   for (int i = 0; i<=size-1; i++) {
     TS_Element* element = this.TS_sparse[i]; 
-    //Print("loc = " + i + "\n");
+    //Print("loc = r_" + i + "\n");
     //Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
     //Print("val = " + element.value + "\n");
-    ObjectCreate("p_"+i, OBJ_ARROW_DOWN,0,element.t, element.value);
-    ObjectSet("p_"+i, OBJPROP_COLOR, Clr);
+    ObjectCreate("r_"+i, OBJ_ARROW_DOWN,0,element.t, element.value);
+    ObjectSet("r_"+i, OBJPROP_COLOR, Clr);
+    cfg.push_array("r_"+i, cfg.chartObj);
   }
 
 }
 
-void ParseTS::compare(void) {
+void ParseTS::compare_resistance(void) {
 
-  // condition for skipping current
+   double delta = MathAbs(this.current.value - this.previous.value);
 
-   /*
-     prev ul -------------
-                
-                       ---------------  curr ul  |
-                                                 | 
-     prev ll -------------                       |
-                                                 |
-                       ---------------  curr ll  |
-   */
+   if (delta < cfg.band_value) {
+     if (this.current.value > this.previous.value) {
+       this.previous = this.current;
+       return;
+     }
+   }
 
+   //if (this.current.lower_limit > this.previous.upper_limit) {
+   if (delta > cfg.band_value) {
 
-   /*
-     curr ul -------------
-                
-                       ---------------  prev ul  |
-                                                 | 
-     curr ll -------------                       |
-                                                 |
-                       ---------------  prev ll  |
-   */
+     if (this.current.value > this.previous.value) {
+       this.previous = this.current;
+       this.already_added = false;
+       return;
+     }
 
-   if (
-       (this.current.upper_limit >= this.previous.lower_limit &&
-        this.current.lower_limit <= this.previous.lower_limit) ||
-
-       (this.previous.upper_limit >= this.current.lower_limit &&
-        this.previous.lower_limit <= this.current.lower_limit)) {
-     this.previous = this.current;
-     return;
+     if (this.current.value < this.previous.value) {
+       if (!this.already_added) {
+         this.push_array(this.previous, this.TS_sparse); 
+       }
+       this.already_added = true;
+       this.previous = this.current;
+       return;
+     }
    } 
-
-
-   /*
-                       ---------------  curr ul  
-
-
-
-                       ---------------  curr ll  
-
-     prev ul -------------
-
-                
-                                                  
-     prev ll -------------                       
-   */
-
-   if (this.current.lower_limit > this.previous.upper_limit) {
-     this.previous_already_added = false;
-     this.previous = this.current;
-     return;
-   } 
-
-   /*
-     ---------------  prev ul  
-
-
-
-     ---------------  prev ll  
-
-                         curr ul -------------
-
-                
-                                                  
-                         curr ll -------------                       
-   */
-   if (this.current.upper_limit < this.previous.lower_limit) {
-     //this.check_previous();
-     if (!this.previous_already_added) this.push_sparse(this.previous);
-     this.previous = this.current;
-     this.previous_already_added = true;
-   } 
-
 }
 
-void ParseTS::first_parse(int limit) {
 
-    for (int i=limit-1; i>0; i--) {
+void ParseTS::calc_resistance(int i) {
 
       TS_Element* buf;
       buf = new TS_Element();
@@ -319,7 +305,7 @@ void ParseTS::first_parse(int limit) {
 
       int size = this.check_array_size(this.buffer);
 
-      if (size == 7) {
+      if (size == window) {
 
         double highest = 0.0;
         int sample = 0;
@@ -354,19 +340,23 @@ void ParseTS::first_parse(int limit) {
         } 
 
         this.current = this.buffer[sample];
-        this.current.fix_bands();
         ArrayResize(buffer, 0); // Clear array memory
 
 
         if (this.previous != NULL) {
-          this.compare();
+          this.compare_resistance();
         } else {
           // current becomes previous
           this.previous = this.current;
         }
 
       } // check for  buff size
+}
 
+void ParseTS::first_parse(int limit) {
+
+    for (int i=limit-1; i>0; i--) {
+      this.calc_resistance(i); 
     } // for loop
 
 }
