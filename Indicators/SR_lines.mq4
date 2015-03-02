@@ -14,6 +14,7 @@
 double         pips;
 extern int     SR_band=5;
 extern int     window=7;
+extern int     max_samples=5;
 extern color   Clr=Magenta;
 
 //+------------------------------------------------------------------+
@@ -37,7 +38,10 @@ class SR_Base {
     int check_array_size(T &arr[]);
  
     template<typename T>
-    void deleteN0_array(T &arr[], int n);
+    void deleteN0_array(T &arr[], int n, bool free);
+
+    template<typename T>
+    void deleteN0_array_fix_chart(T &arr[], int n, bool free);
 
     template<typename T>
     void debug_array(T &arr[]);
@@ -89,12 +93,54 @@ T SR_Base::pop0_array(T &arr[]) {
 
 
 template<typename T>
-  void SR_Base::deleteN0_array(T &arr[], int n) {
+  void SR_Base::deleteN0_array(T &arr[], int n, bool free) {
 
   int size=ArraySize(arr);
 
   if (size != 0 && n <= size) {
     ArraySetAsSeries(arr, true);
+
+    /*
+    0 1 2 3 4 5 6 (7)  s    (s = 7)
+    0 1 2 3       (-3) s-n  (n=3) 
+            4 5 6 
+    */
+ 
+    if (free) {
+      for (int j=size-n; j< size; j++) {
+         delete arr[j];
+      } 
+    }
+
+    ArrayResize(arr, size-n);
+    ArraySetAsSeries(arr, false);
+  }
+  
+}
+
+template<typename T>
+  void SR_Base::deleteN0_array_fix_chart(T &arr[], int n, bool free) {
+
+  int size=ArraySize(arr);
+
+  if (size != 0 && n <= size) {
+    ArraySetAsSeries(arr, true);
+
+    /*
+    0 1 2 3 4 5 6 (7)  s    (s = 7)
+    0 1 2 3       (-3) s-n  (n=3) 
+            4 5 6 
+    */
+ 
+    if (free) {
+      for (int j=size-n; j< size; j++) {
+        if (ObjectFind(arr[j].name) != -1) {
+          ObjectDelete(arr[j].name); 
+        } 
+        delete arr[j];
+      } 
+    }
+
     ArrayResize(arr, size-n);
     ArraySetAsSeries(arr, false);
   }
@@ -207,6 +253,7 @@ class TS_Element {
     double lower_limit;
     double value;
     int    weight;
+    string name;
     void   set_fields(double h, double l, double o, double c, datetime dt);
 };
 
@@ -235,46 +282,44 @@ class ParseTS : public SR_Base {
 
     TS_Element* TS_r_sparse[];
     TS_Element* TS_s_sparse[];
+
+    uint name_counter;
+
     bool    r_already_added;
     bool    s_already_added;
     void    first_parse(int limit);
     void    calc_resistance(int i);
     void    calc_support(int i);
-    void    Mark_resistance(void);
-    void    Mark_support(void);
+    void    Limit_resistance(void);
+    void    Limit_support(void);
     void    compare_resistance(void);
     void    compare_support(void);
+    void    push_resistance();
+    void    push_support();
     
     ParseTS() { 
       this.r_already_added = false; 
       this.s_already_added = false; 
+      this.name_counter = 0;
     };
 
 };
 
-void ParseTS::Mark_resistance() {
-  int size=ArraySize(this.TS_r_sparse);
 
-  for (int i = 0; i<=size-1; i++) {
-    TS_Element* element = this.TS_r_sparse[i]; 
-    //Print("loc = r_" + i +  "; val = " + element.value + "\n");
-    //Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
-    ObjectCreate("r_"+i, OBJ_ARROW_DOWN,0,element.t, element.value);
-    ObjectSet("r_"+i, OBJPROP_COLOR, Clr);
-    cfg.push_array("r_"+i, cfg.chartObj);
+void ParseTS::Limit_resistance() {
+  int size=ArraySize(this.TS_r_sparse);
+  if (size > max_samples) {
+    int to_remove = size - max_samples;
+    this.deleteN0_array_fix_chart(this.TS_r_sparse, to_remove, true);
   }
 }
 
-void ParseTS::Mark_support() {
-  int size=ArraySize(this.TS_s_sparse);
 
-  for (int i = 0; i<=size-1; i++) {
-    TS_Element* element = this.TS_s_sparse[i]; 
-    //Print("loc = s_" + i +  "; val = " + element.value + "\n");
-    //Print("t = " +  TimeToStr(element.t, TIME_DATE|TIME_MINUTES) + "\n");
-    ObjectCreate("s_"+i, OBJ_ARROW_UP,0,element.t, element.value);
-    ObjectSet("s_"+i, OBJPROP_COLOR, Clr);
-    cfg.push_array("s_"+i, cfg.chartObj);
+void ParseTS::Limit_support() {
+  int size=ArraySize(this.TS_s_sparse);
+  if (size > max_samples) {
+    int to_remove = size - max_samples;
+    this.deleteN0_array_fix_chart(this.TS_s_sparse, to_remove, true);
   }
 }
 
@@ -299,7 +344,7 @@ void ParseTS::compare_support(void) {
 
      if (this.s_current.value > this.s_previous.value) {
        if (!this.s_already_added) {
-         this.push_array(this.s_previous, this.TS_s_sparse); 
+         this.push_support();
        }
        this.s_already_added = true;
        this.s_previous = this.s_current;
@@ -307,6 +352,18 @@ void ParseTS::compare_support(void) {
      }
    } 
 }
+
+void ParseTS::push_support() {
+  this.s_previous.name = "s_" + this.name_counter;
+  this.push_array(this.s_previous, this.TS_s_sparse); 
+  this.name_counter++;
+
+  ObjectCreate(this.s_previous.name, OBJ_ARROW_UP,0,
+               this.s_previous.t, this.s_previous.value);
+  ObjectSet(this.s_previous.name, OBJPROP_COLOR, Clr);
+  cfg.push_array(this.s_previous.name, cfg.chartObj);
+}
+
 
 void ParseTS::compare_resistance(void) {
 
@@ -328,14 +385,28 @@ void ParseTS::compare_resistance(void) {
      }
 
      if (this.r_current.value < this.r_previous.value) {
+
        if (!this.r_already_added) {
-         this.push_array(this.r_previous, this.TS_r_sparse); 
+         this.push_resistance();
        }
+
        this.r_already_added = true;
        this.r_previous = this.r_current;
        return;
      }
    } 
+}
+
+
+void ParseTS::push_resistance() {
+  this.r_previous.name = "r_" + this.name_counter;
+  this.push_array(this.r_previous, this.TS_r_sparse); 
+  this.name_counter++;
+
+  ObjectCreate(this.r_previous.name, OBJ_ARROW_DOWN,0,
+               this.r_previous.t, this.r_previous.value);
+  ObjectSet(this.r_previous.name, OBJPROP_COLOR, Clr);
+  cfg.push_array(this.r_previous.name, cfg.chartObj);
 }
 
 void ParseTS::calc_resistance(int i) {
@@ -454,9 +525,11 @@ void ParseTS::calc_support(int i) {
 
 void ParseTS::first_parse(int limit) {
 
-    for (int i=limit-1; i>0; i--) {
+    for (int i=limit-1; i>1; i--) {
       this.calc_resistance(i); 
+      this.Limit_resistance();
       this.calc_support(i); 
+      this.Limit_support();
     } // for loop
 
 }
@@ -481,18 +554,17 @@ int OnCalculate(const int rates_total,
                 const int &spread[])
   {
 //---
-    // Bars : total number of candles in
-    // the chart. 
-    // When OnCalculate executes, it 
-    // updatates counted bars.
+    // Bars : total number of candles in the chart. 
     static int BarsOnChart = 0; // Initialized once.
 
     if (BarsOnChart == 0) {
+      Print("== Info : Number of 1 hr candles = " + Bars);
+      Print("== Info : Number of 4 hr candles = " + Bars/4);
+      Print("== Info : Number of days = " + Bars/24);
       pts.first_parse(Bars);
-      pts.Mark_resistance();
-      pts.Mark_support();
     } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
-      pts.calc_resistance(0); 
+      pts.calc_resistance(1); 
+      pts.calc_support(1); 
     }
     
 
