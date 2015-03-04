@@ -84,10 +84,16 @@ int OnCalculate(const int rates_total,
       Print("== Info : Number of 4 hr candles = " + Bars/4);
       Print("== Info : Number of days = " + Bars/24);
 
+      // Hourly candle
       for (int i=Bars-1; i>1; i--) {
         hourly.process_candle(i);
       }
+
+      // 4hr candle
+
     } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
+
+        // Hourly candle
         hourly.process_candle(1);
     }
     
