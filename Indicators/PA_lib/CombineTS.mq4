@@ -53,9 +53,10 @@ void CombineTS::bufdepthN(TS_Element* buf) {
   double val_low   = 0.0;
   datetime val_time  = 0;
 
-  for (int j=size; j< size; j++) {
+  for (int j=0; j< size; j++) {
     if (j == 0) { 
       val_open = this.TS_sparse[j].Open;
+      val_close  = this.TS_sparse[j].Close;
       val_high = this.TS_sparse[j].High;
       val_low  = this.TS_sparse[j].Low;
     }
@@ -74,10 +75,11 @@ void CombineTS::bufdepthN(TS_Element* buf) {
     }
   } 
 
-  for (int j=size; j< size; j++) {
+  for (int j=0; j< size; j++) {
     delete this.TS_sparse[j];
   }
-
+  ArrayResize(this.TS_sparse, 0); // Clear array memory
+ 
 
   TS_Element* buf1;
 

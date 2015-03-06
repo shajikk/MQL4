@@ -17,6 +17,9 @@ class ParseTS : public SR_Base {
     bool    r_already_added;
     bool    s_already_added;
 
+    string  tag;
+    color   Clr;
+
     void    process_candle_resistance(TS_Element* buf);
     void    process_candle_support(TS_Element* buf);
 

@@ -49,13 +49,13 @@ void ParseTS::compare_support(void) {
 
 void ParseTS::push_support() {
   this.s_previous.valid = true;
-  this.s_previous.name = "s_" + this.name_counter;
+  this.s_previous.name = "s_" + this.tag + this.name_counter;
   this.push_array(this.s_previous, this.TS_s_sparse); 
   this.name_counter++;
 
-  ObjectCreate(this.s_previous.name, OBJ_ARROW_UP,0,
+  ObjectCreate(this.s_previous.name, OBJ_HLINE,0,
                this.s_previous.t, this.s_previous.value);
-  ObjectSet(this.s_previous.name, OBJPROP_COLOR, Clr);
+  ObjectSet(this.s_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.s_previous.name, cfg.chartObj);
 }
 
@@ -100,7 +100,7 @@ void ParseTS::calc_support(TS_Element* buf) {
         } 
 
         this.s_current = this.s_buffer[sample];
-        ArrayResize(s_buffer, 0); // Clear array memory
+        ArrayResize(this.s_buffer, 0); // Clear array memory
 
 
         if (this.s_previous != NULL) {

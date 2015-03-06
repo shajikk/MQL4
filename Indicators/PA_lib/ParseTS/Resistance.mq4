@@ -50,13 +50,13 @@ void ParseTS::compare_resistance(void) {
 
 void ParseTS::push_resistance() {
   this.r_previous.valid = true;
-  this.r_previous.name = "r_" + this.name_counter;
+  this.r_previous.name = "r_" + this.tag + this.name_counter;
   this.push_array(this.r_previous, this.TS_r_sparse); 
   this.name_counter++;
 
-  ObjectCreate(this.r_previous.name, OBJ_ARROW_DOWN,0,
+  ObjectCreate(this.r_previous.name, OBJ_HLINE,0,
                this.r_previous.t, this.r_previous.value);
-  ObjectSet(this.r_previous.name, OBJPROP_COLOR, Clr);
+  ObjectSet(this.r_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.r_previous.name, cfg.chartObj);
 }
 
@@ -101,7 +101,7 @@ void ParseTS::calc_resistance(TS_Element* buf) {
         } 
 
         this.r_current = this.r_buffer[sample];
-        ArrayResize(r_buffer, 0); // Clear array memory
+        ArrayResize(this.r_buffer, 0); // Clear array memory
 
 
         if (this.r_previous != NULL) {

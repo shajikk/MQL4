@@ -13,9 +13,8 @@
 
 double         pips;
 extern int     SR_band=5;
-extern int     window=7;
+extern int     window=5;
 extern int     max_samples=5;
-extern color   Clr=Magenta;
 
 #include "PA_lib/BaseClass.mq4"
 #include "PA_lib/Config.mq4"
@@ -69,6 +68,7 @@ void OnDeinit(const int reason) {
 
 CombineTS   hourly; 
 CombineTS   four; 
+CombineTS   day; 
 
 bool flag = false;
 
@@ -94,7 +94,16 @@ int OnCalculate(const int rates_total,
 
 
       hourly.buf_depth = 1;
+      hourly.pts.Clr = Red;
+      hourly.pts.tag = "1hr";
+
       four.buf_depth = 4;
+      four.pts.Clr = Magenta;
+      four.pts.tag = "4hr";
+
+      day.buf_depth = 24;
+      day.pts.Clr = Orange;
+      day.pts.tag = "day";
 
       for (int i=Bars-1; i>1; i--) {
 
@@ -103,7 +112,8 @@ int OnCalculate(const int rates_total,
         buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
 
         hourly.start_combine(buf);
-        //four.start_combine(buf);
+        four.start_combine(buf);
+        day.start_combine(buf);
         delete(buf);
 
       }
@@ -116,7 +126,8 @@ int OnCalculate(const int rates_total,
         buf.set_fields(High[1], Low[1], Open[1], Close[1], Time[1]);
 
         hourly.start_combine(buf);
-        //four.start_combine(buf);
+        four.start_combine(buf);
+        day.start_combine(buf);
         delete(buf);
 
     }
