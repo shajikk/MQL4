@@ -16,7 +16,11 @@ class TS_Element {
     double value;
     int    weight;
     string name;
+    bool   valid;
     void   set_fields(double h, double l, double o, double c, datetime dt);
+    TS_Element() { 
+      this.valid = false;
+    };
 };
 
 void TS_Element::set_fields(double h, double l, double o, double c, datetime dt) {

@@ -1,4 +1,3 @@
-
 void ParseTS::Limit_resistance() {
   int size=ArraySize(this.TS_r_sparse);
   if (size > max_samples) {
@@ -13,15 +12,22 @@ void ParseTS::compare_resistance(void) {
 
    if (delta < cfg.band_value) {
      if (this.r_current.value > this.r_previous.value) {
+
+       if (!this.r_previous.valid) delete this.r_previous;
        this.r_previous = this.r_current;
+
        return;
      }
+     delete (this.r_current);
    }
 
    if (delta > cfg.band_value) {
 
      if (this.r_current.value > this.r_previous.value) {
+
+       if (!this.r_previous.valid) delete this.r_previous;
        this.r_previous = this.r_current;
+
        this.r_already_added = false;
        return;
      }
@@ -33,13 +39,17 @@ void ParseTS::compare_resistance(void) {
        }
 
        this.r_already_added = true;
+
+       if (!this.r_previous.valid) delete this.r_previous;
        this.r_previous = this.r_current;
+
        return;
      }
    } 
 }
 
 void ParseTS::push_resistance() {
+  this.r_previous.valid = true;
   this.r_previous.name = "r_" + this.name_counter;
   this.push_array(this.r_previous, this.TS_r_sparse); 
   this.name_counter++;
@@ -50,11 +60,8 @@ void ParseTS::push_resistance() {
   cfg.push_array(this.r_previous.name, cfg.chartObj);
 }
 
-void ParseTS::calc_resistance(int i) {
+void ParseTS::calc_resistance(TS_Element* buf) {
       
-      TS_Element* buf;
-      buf = new TS_Element();
-      buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
       this.push_array(buf, this.r_buffer); 
 
       int size = this.check_array_size(this.r_buffer);

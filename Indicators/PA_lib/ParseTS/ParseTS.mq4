@@ -16,9 +16,13 @@ class ParseTS : public SR_Base {
 
     bool    r_already_added;
     bool    s_already_added;
-    void    process_candle(int i);
-    void    calc_resistance(int i);
-    void    calc_support(int i);
+
+    void    process_candle_resistance(TS_Element* buf);
+    void    process_candle_support(TS_Element* buf);
+
+    void    process_candle(TS_Element* buf);
+    void    calc_resistance(TS_Element* buf);
+    void    calc_support(TS_Element* buf);
     void    Limit_resistance(void);
     void    Limit_support(void);
     void    compare_resistance(void);
@@ -35,9 +39,13 @@ class ParseTS : public SR_Base {
 };
 
 
-void ParseTS::process_candle(int i) {
-      this.calc_resistance(i); 
+void ParseTS::process_candle_resistance(TS_Element* buf) {
+      this.calc_resistance(buf); 
       this.Limit_resistance();
-      this.calc_support(i); 
+}
+
+
+void ParseTS::process_candle_support(TS_Element* buf) {
+      this.calc_support(buf); 
       this.Limit_support();
 }

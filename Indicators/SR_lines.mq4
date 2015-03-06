@@ -50,6 +50,7 @@ void OnDeinit(const int reason) {
 //+------------------------------------------------------------------+
 //| Parse time series
 //+------------------------------------------------------------------+
+
 #include "PA_lib/ParseTS/ParseTS.mq4"
 
 #include "PA_lib/ParseTS/Support.mq4"
@@ -57,10 +58,17 @@ void OnDeinit(const int reason) {
 #include "PA_lib/ParseTS/Resistance.mq4"
 
 //+------------------------------------------------------------------+
+//| CombineTS
+//+------------------------------------------------------------------+
+
+#include "PA_lib/CombineTS.mq4"
+
+//+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
 
-ParseTS hourly; 
+CombineTS   hourly; 
+CombineTS   four; 
 
 bool flag = false;
 
@@ -84,17 +92,33 @@ int OnCalculate(const int rates_total,
       Print("== Info : Number of 4 hr candles = " + Bars/4);
       Print("== Info : Number of days = " + Bars/24);
 
-      // Hourly candle
-      for (int i=Bars-1; i>1; i--) {
-        hourly.process_candle(i);
-      }
 
-      // 4hr candle
+      hourly.buf_depth = 1;
+      four.buf_depth = 4;
+
+      for (int i=Bars-1; i>1; i--) {
+
+        TS_Element* buf;
+        buf = new TS_Element();
+        buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
+
+        hourly.start_combine(buf);
+        //four.start_combine(buf);
+        delete(buf);
+
+      }
 
     } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
 
-        // Hourly candle
-        hourly.process_candle(1);
+
+        TS_Element* buf;
+        buf = new TS_Element();
+        buf.set_fields(High[1], Low[1], Open[1], Close[1], Time[1]);
+
+        hourly.start_combine(buf);
+        //four.start_combine(buf);
+        delete(buf);
+
     }
     
 

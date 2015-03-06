@@ -13,15 +13,22 @@ void ParseTS::compare_support(void) {
 
    if (delta < cfg.band_value) {
      if (this.s_current.value < this.s_previous.value) {
+
+       if (!this.s_previous.valid) delete this.s_previous;
        this.s_previous = this.s_current;
+
        return;
      }
+     delete (this.s_current);
    }
 
    if (delta > cfg.band_value) {
 
      if (this.s_current.value < this.s_previous.value) {
+
+       if (!this.s_previous.valid) delete this.s_previous;
        this.s_previous = this.s_current;
+
        this.s_already_added = false;
        return;
      }
@@ -31,13 +38,17 @@ void ParseTS::compare_support(void) {
          this.push_support();
        }
        this.s_already_added = true;
+
+       if (!this.s_previous.valid) delete this.s_previous;
        this.s_previous = this.s_current;
+
        return;
      }
    } 
 }
 
 void ParseTS::push_support() {
+  this.s_previous.valid = true;
   this.s_previous.name = "s_" + this.name_counter;
   this.push_array(this.s_previous, this.TS_s_sparse); 
   this.name_counter++;
@@ -48,11 +59,8 @@ void ParseTS::push_support() {
   cfg.push_array(this.s_previous.name, cfg.chartObj);
 }
 
-void ParseTS::calc_support(int i) {
+void ParseTS::calc_support(TS_Element* buf) {
 
-      TS_Element* buf;
-      buf = new TS_Element();
-      buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
       this.push_array(buf, this.s_buffer); 
 
       int size = this.check_array_size(this.s_buffer);
