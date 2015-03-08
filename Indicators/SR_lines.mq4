@@ -16,6 +16,9 @@ extern int     SR_band=5;
 extern int     window=5;
 extern int     max_samples=5;
 
+extern int     base_chart_period=30;
+extern bool    spawn_child_chart=true;
+
 #include "PA_lib/BaseClass.mq4"
 #include "PA_lib/Config.mq4"
 
@@ -66,6 +69,7 @@ void OnDeinit(const int reason) {
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
 
+CombineTS   thirty; 
 CombineTS   hourly; 
 CombineTS   four; 
 CombineTS   day; 
@@ -87,23 +91,20 @@ int OnCalculate(const int rates_total,
     // Bars : total number of candles in the chart. 
     static int BarsOnChart = 0; // Initialized once.
 
+    if (Period() != base_chart_period) {
+      return(rates_total);
+    }
+
     if (BarsOnChart == 0) {
       Print("== Info : Number of 1 hr candles = " + Bars);
       Print("== Info : Number of 4 hr candles = " + Bars/4);
       Print("== Info : Number of days = " + Bars/24);
 
 
-      hourly.buf_depth = 1;
-      hourly.pts.Clr = Red;
-      hourly.pts.tag = "1hr";
-
-      four.buf_depth = 4;
-      four.pts.Clr = Magenta;
-      four.pts.tag = "4hr";
-
-      day.buf_depth = 24;
-      day.pts.Clr = Orange;
-      day.pts.tag = "day";
+      thirty.Setup(1, "30m", 30, Blue);
+      hourly.Setup(2, "1hr", 60, Magenta);
+      four.Setup(8, "4hr", 240, Blue);
+      day.Setup(48, "day", 1440, Orange);
 
       for (int i=Bars-1; i>1; i--) {
 
@@ -111,6 +112,7 @@ int OnCalculate(const int rates_total,
         buf = new TS_Element();
         buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
 
+        thirty.start_combine(buf);
         hourly.start_combine(buf);
         four.start_combine(buf);
         day.start_combine(buf);
@@ -125,6 +127,7 @@ int OnCalculate(const int rates_total,
         buf = new TS_Element();
         buf.set_fields(High[1], Low[1], Open[1], Close[1], Time[1]);
 
+        thirty.start_combine(buf);
         hourly.start_combine(buf);
         four.start_combine(buf);
         day.start_combine(buf);

@@ -6,6 +6,8 @@
 class SR_Base {
 
   public:
+    long    chart_id;
+
     template<typename T>
     void    push_array(T element, T &arr[]);
 
@@ -115,8 +117,8 @@ template<typename T>
  
     if (free) {
       for (int j=size-n; j< size; j++) {
-        if (ObjectFind(arr[j].name) != -1) {
-          ObjectDelete(arr[j].name); 
+        if (ObjectFind(this.chart_id, arr[j].name) != -1) {
+          ObjectDelete(this.chart_id, arr[j].name); 
         } 
         delete arr[j];
       } 

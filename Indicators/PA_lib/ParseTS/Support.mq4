@@ -53,7 +53,7 @@ void ParseTS::push_support() {
   this.push_array(this.s_previous, this.TS_s_sparse); 
   this.name_counter++;
 
-  ObjectCreate(this.s_previous.name, OBJ_HLINE,0,
+  ObjectCreate(this.chart_id, this.s_previous.name, OBJ_HLINE,0,
                this.s_previous.t, this.s_previous.value);
   ObjectSet(this.s_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.s_previous.name, cfg.chartObj);

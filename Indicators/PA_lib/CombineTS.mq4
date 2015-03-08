@@ -2,18 +2,40 @@ class CombineTS : public SR_Base {
 
   public:
     int     buf_depth;
+    int     chart_period;
+    bool    base_chart; 
     void    start_combine(TS_Element* buf);
     void    bufdepth0(TS_Element* buf);
     void    bufdepthN(TS_Element* buf);
+    void    Setup(int d, string tag, int mins, color clr);
 
     TS_Element* TS_sparse[];
     ParseTS*    pts;
 
     CombineTS() { 
       this.pts = new ParseTS;;
+      this.base_chart = false;
     };
     
 };
+
+void CombineTS::Setup(int d, string tag, int mins, color clr) {
+  this.buf_depth = d;
+  this.pts.Clr   = clr; 
+  this.pts.tag   = tag; 
+  this.chart_period = mins;
+
+  if (this.chart_period == base_chart_period) {
+    this.base_chart = true;
+  }
+
+  this.chart_id = ChartID(); 
+
+  if (spawn_child_chart && !this.base_chart) {
+    this.chart_id = ChartOpen(NULL, mins);
+    this.pts.chart_id = this.chart_id;
+  } 
+}
 
 void CombineTS::start_combine(TS_Element* buf) {
   if (this.buf_depth == 1) this.bufdepth0(buf);

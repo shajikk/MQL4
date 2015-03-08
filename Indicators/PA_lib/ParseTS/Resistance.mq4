@@ -54,7 +54,7 @@ void ParseTS::push_resistance() {
   this.push_array(this.r_previous, this.TS_r_sparse); 
   this.name_counter++;
 
-  ObjectCreate(this.r_previous.name, OBJ_HLINE,0,
+  ObjectCreate(this.chart_id, this.r_previous.name, OBJ_HLINE,0,
                this.r_previous.t, this.r_previous.value);
   ObjectSet(this.r_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.r_previous.name, cfg.chartObj);
