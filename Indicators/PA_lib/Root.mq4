@@ -4,6 +4,7 @@ class Root : public SR_Base {
     string      TS_chart_name[];
     CombineTS*  TS_charts[];
     void Init(void);
+    void Deinit(void);
     void Iterate_charts(TS_Element* buf);
 
 };
@@ -31,5 +32,16 @@ void Root::Iterate_charts(TS_Element* buf) {
 
   for (int j = 0; j < size; j++) {
     this.TS_charts[j].start_combine(buf);
+  }
+}
+
+
+void Root::Deinit() {
+  int size = this.check_array_size(this.TS_charts);
+
+  for (int j = 0; j < size; j++) {
+    if (spawn_child_chart && !this.TS_charts[j].base_chart) {
+      ChartClose(this.TS_charts[j].chart_id);
+    }
   }
 }

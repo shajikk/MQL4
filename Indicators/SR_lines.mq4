@@ -23,28 +23,6 @@ extern bool    spawn_child_chart=true;
 #include "PA_lib/Config.mq4"
 
 //+------------------------------------------------------------------+
-//| Custom indicator initialization function                         |
-//+------------------------------------------------------------------+
-
-int OnInit() {
-
-   cfg.set_pips();
-
-   return(INIT_SUCCEEDED);
-}
-
-void OnDeinit(const int reason) {
-
-
-  int size=ArraySize(cfg.chartObj);
-
-  for (int i = 0; i<=size-1; i++) {
-    ObjectDelete(cfg.chartObj[i]);
-  }
-
-}
-
-//+------------------------------------------------------------------+
 //| Time series element
 //+------------------------------------------------------------------+
 #include "PA_lib/TS_Element.mq4"
@@ -134,4 +112,28 @@ int OnCalculate(const int rates_total,
 //--- return value of prev_calculated for next call
    return(rates_total);
   }
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+
+int OnInit() {
+
+   cfg.set_pips();
+
+   return(INIT_SUCCEEDED);
+}
+
+void OnDeinit(const int reason) {
+
+
+  int size=ArraySize(cfg.chartObj);
+  rt.Deinit();
+
+  for (int i = 0; i<=size-1; i++) {
+    ObjectDelete(cfg.chartObj[i]);
+  }
+
+}
+
 //+------------------------------------------------------------------+
