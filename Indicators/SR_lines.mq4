@@ -60,21 +60,20 @@ void OnDeinit(const int reason) {
 #include "PA_lib/ParseTS/Resistance.mq4"
 
 //+------------------------------------------------------------------+
-//| CombineTS
+//| CombineTS, Root
 //+------------------------------------------------------------------+
 
 #include "PA_lib/CombineTS.mq4"
+
+#include "PA_lib/Root.mq4"
 
 //+------------------------------------------------------------------+
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
 
-CombineTS   thirty; 
-CombineTS   hourly; 
-CombineTS   four; 
-CombineTS   day; 
-
 bool flag = false;
+
+Root  rt;
 
 int OnCalculate(const int rates_total,
                 const int prev_calculated,
@@ -100,11 +99,11 @@ int OnCalculate(const int rates_total,
       Print("== Info : Number of 4 hr candles = " + Bars/4);
       Print("== Info : Number of days = " + Bars/24);
 
-
-      thirty.Setup(1, "30m", 30, Blue);
-      hourly.Setup(2, "1hr", 60, Magenta);
-      four.Setup(8, "4hr", 240, Blue);
-      day.Setup(48, "day", 1440, Orange);
+      rt.push_array("30m", rt.TS_chart_name);
+      rt.push_array("1hr", rt.TS_chart_name);
+      rt.push_array("4hr", rt.TS_chart_name);
+      rt.push_array("day", rt.TS_chart_name);
+      rt.Init();
 
       for (int i=Bars-1; i>1; i--) {
 
@@ -112,10 +111,7 @@ int OnCalculate(const int rates_total,
         buf = new TS_Element();
         buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
 
-        thirty.start_combine(buf);
-        hourly.start_combine(buf);
-        four.start_combine(buf);
-        day.start_combine(buf);
+        rt.Iterate_charts(buf);
         delete(buf);
 
       }
@@ -127,10 +123,7 @@ int OnCalculate(const int rates_total,
         buf = new TS_Element();
         buf.set_fields(High[1], Low[1], Open[1], Close[1], Time[1]);
 
-        thirty.start_combine(buf);
-        hourly.start_combine(buf);
-        four.start_combine(buf);
-        day.start_combine(buf);
+        rt.Iterate_charts(buf);
         delete(buf);
 
     }
