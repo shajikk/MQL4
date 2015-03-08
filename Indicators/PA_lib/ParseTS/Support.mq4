@@ -1,8 +1,8 @@
 
 void ParseTS::Limit_support() {
   int size=ArraySize(this.TS_s_sparse);
-  if (size > max_samples) {
-    int to_remove = size - max_samples;
+  if (size > this.max_samples) {
+    int to_remove = size - this.max_samples;
     this.deleteN0_array_fix_chart(this.TS_s_sparse, to_remove, true);
   }
 }
@@ -11,7 +11,7 @@ void ParseTS::compare_support(void) {
 
    double delta = MathAbs(this.s_current.value - this.s_previous.value);
 
-   if (delta < cfg.band_value) {
+   if (delta < this.band_value) {
      if (this.s_current.value < this.s_previous.value) {
 
        if (!this.s_previous.valid) delete this.s_previous;
@@ -22,7 +22,7 @@ void ParseTS::compare_support(void) {
      delete (this.s_current);
    }
 
-   if (delta > cfg.band_value) {
+   if (delta > this.band_value) {
 
      if (this.s_current.value < this.s_previous.value) {
 
@@ -72,7 +72,7 @@ void ParseTS::calc_support(TS_Element* buf) {
 
       int size = this.check_array_size(this.s_buffer);
 
-      if (size == window) {
+      if (size == this.window) {
 
         double lowest = 0.0;
         int sample = 0;

@@ -12,12 +12,10 @@
 
 
 double         pips;
-extern int     SR_band=5;
-extern int     window=5;
-extern int     max_samples=5;
 
-extern int     base_chart_period=30;
 extern bool    spawn_child_chart=true;
+
+int     base_chart_period=30;
 
 #include "PA_lib/BaseClass.mq4"
 #include "PA_lib/Config.mq4"
@@ -50,6 +48,8 @@ extern bool    spawn_child_chart=true;
 //+------------------------------------------------------------------+
 
 bool flag = false;
+
+bool start = false;
 
 Root  rt;
 
@@ -84,6 +84,9 @@ int OnCalculate(const int rates_total,
       rt.Init();
 
       for (int i=Bars-1; i>1; i--) {
+
+        if (!start && TimeToStr(Time[i], TIME_SECONDS)== "00:00:00") start = true;
+        if (!start) continue;
 
         TS_Element* buf;
         buf = new TS_Element();

@@ -20,6 +20,10 @@ class ParseTS : public SR_Base {
     string  tag;
     color   Clr;
 
+    double  band_value;
+    int     window;
+    int     max_samples;
+
     void    process_candle_resistance(TS_Element* buf);
     void    process_candle_support(TS_Element* buf);
 

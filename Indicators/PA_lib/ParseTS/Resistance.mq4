@@ -1,7 +1,7 @@
 void ParseTS::Limit_resistance() {
   int size=ArraySize(this.TS_r_sparse);
-  if (size > max_samples) {
-    int to_remove = size - max_samples;
+  if (size > this.max_samples) {
+    int to_remove = size - this.max_samples;
     this.deleteN0_array_fix_chart(this.TS_r_sparse, to_remove, true);
   }
 }
@@ -10,7 +10,7 @@ void ParseTS::compare_resistance(void) {
 
    double delta = MathAbs(this.r_current.value - this.r_previous.value);
 
-   if (delta < cfg.band_value) {
+   if (delta < this.band_value) {
      if (this.r_current.value > this.r_previous.value) {
 
        if (!this.r_previous.valid) delete this.r_previous;
@@ -21,7 +21,7 @@ void ParseTS::compare_resistance(void) {
      delete (this.r_current);
    }
 
-   if (delta > cfg.band_value) {
+   if (delta > this.band_value) {
 
      if (this.r_current.value > this.r_previous.value) {
 
@@ -73,7 +73,7 @@ void ParseTS::calc_resistance(TS_Element* buf) {
 
       int size = this.check_array_size(this.r_buffer);
 
-      if (size == window) {
+      if (size == this.window) {
 
         double highest = 0.0;
         int sample = 0;

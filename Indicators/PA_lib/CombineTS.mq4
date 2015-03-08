@@ -9,17 +9,36 @@ class CombineTS : public SR_Base {
     void    bufdepthN(TS_Element* buf);
     void    Setup(int d, string tag, int mins, color clr);
 
+    int     SR_band;
+    int     window;
+    int     max_samples;
+
     TS_Element* TS_sparse[];
     ParseTS*    pts;
 
+/*
     CombineTS() { 
       this.pts = new ParseTS;;
       this.base_chart = false;
+
+      //this.pts.SR_band     = this.SR_band;
+      //this.pts.window      = this.window;
+      //this.pts.max_samples = this.max_samples;
+
     };
+*/
     
 };
 
 void CombineTS::Setup(int d, string tag, int mins, color clr) {
+
+  this.pts = new ParseTS;;
+  this.base_chart = false;
+
+  this.pts.band_value  = this.SR_band * cfg.pips;
+  this.pts.window      = this.window;
+  this.pts.max_samples = this.max_samples;
+
   this.buf_depth = d;
   this.pts.Clr   = clr; 
   this.pts.tag   = tag; 
