@@ -119,6 +119,7 @@ template<typename T>
       for (int j=size-n; j< size; j++) {
         if (ObjectFind(this.chart_id, arr[j].name) != -1) {
           ObjectDelete(this.chart_id, arr[j].name); 
+          ObjectDelete(this.chart_id, arr[j].name+"_ptr"); 
         } 
         delete arr[j];
       } 

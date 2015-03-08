@@ -58,6 +58,13 @@ void ParseTS::push_resistance() {
                this.r_previous.t, this.r_previous.value);
   ObjectSet(this.r_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.r_previous.name, cfg.chartObj);
+
+  string arrow = this.r_previous.name + "_ptr";
+
+  ObjectCreate(this.chart_id, arrow, OBJ_ARROW_DOWN,0,
+               this.r_previous.t, this.r_previous.value);
+  ObjectSet(arrow, OBJPROP_COLOR, Red);
+  cfg.push_array(arrow, cfg.chartObj);
 }
 
 void ParseTS::calc_resistance(TS_Element* buf) {

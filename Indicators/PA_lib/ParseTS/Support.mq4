@@ -57,6 +57,13 @@ void ParseTS::push_support() {
                this.s_previous.t, this.s_previous.value);
   ObjectSet(this.s_previous.name, OBJPROP_COLOR, this.Clr);
   cfg.push_array(this.s_previous.name, cfg.chartObj);
+
+  string arrow = this.s_previous.name + "_ptr";
+
+  ObjectCreate(this.chart_id, arrow, OBJ_ARROW_UP,0,
+               this.s_previous.t, this.s_previous.value);
+  ObjectSet(arrow, OBJPROP_COLOR, Red);
+  cfg.push_array(arrow, cfg.chartObj);
 }
 
 void ParseTS::calc_support(TS_Element* buf) {
