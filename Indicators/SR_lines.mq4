@@ -47,10 +47,6 @@ int     base_chart_period=30;
 //| Custom indicator iteration function                              |
 //+------------------------------------------------------------------+
 
-bool flag = false;
-
-bool start = false;
-
 Root  rt;
 
 int OnCalculate(const int rates_total,
@@ -77,16 +73,7 @@ int OnCalculate(const int rates_total,
       Print("== Info : Number of 4 hr candles = " + Bars/4);
       Print("== Info : Number of days = " + Bars/24);
 
-      rt.push_array("30m", rt.TS_chart_name);
-      rt.push_array("1hr", rt.TS_chart_name);
-      rt.push_array("4hr", rt.TS_chart_name);
-      rt.push_array("day", rt.TS_chart_name);
-      rt.Init();
-
       for (int i=Bars-1; i>1; i--) {
-
-        if (!start && TimeToStr(Time[i], TIME_SECONDS)== "00:00:00") start = true;
-        if (!start) continue;
 
         TS_Element* buf;
         buf = new TS_Element();
@@ -123,6 +110,11 @@ int OnCalculate(const int rates_total,
 int OnInit() {
 
    cfg.set_pips();
+   rt.push_array("30m", rt.TS_chart_name);
+   rt.push_array("1hr", rt.TS_chart_name);
+   rt.push_array("4hr", rt.TS_chart_name);
+   rt.push_array("day", rt.TS_chart_name);
+   rt.Init();
 
    return(INIT_SUCCEEDED);
 }
