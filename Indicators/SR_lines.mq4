@@ -15,7 +15,7 @@ double         pips;
 
 extern bool    spawn_child_chart=true;
 
-int     base_chart_period=30;
+int     base_chart_period=PERIOD_M30;
 
 #include "PA_lib/BaseClass.mq4"
 #include "PA_lib/Config.mq4"
@@ -62,42 +62,12 @@ int OnCalculate(const int rates_total,
   {
 //---
     // Bars : total number of candles in the chart. 
-    static int BarsOnChart = 0; // Initialized once.
 
     if (Period() != base_chart_period) {
       return(rates_total);
     }
 
-    if (BarsOnChart == 0) {
-      Print("== Info : Number of 1 hr candles = " + Bars);
-      Print("== Info : Number of 4 hr candles = " + Bars/4);
-      Print("== Info : Number of days = " + Bars/24);
-
-      for (int i=Bars-1; i>1; i--) {
-
-        TS_Element* buf;
-        buf = new TS_Element();
-        buf.set_fields(High[i], Low[i], Open[i], Close[i], Time[i]);
-
-        rt.Iterate_charts(buf);
-        delete(buf);
-
-      }
-
-    } else if (BarsOnChart != 0 && Bars != BarsOnChart) {
-
-
-        TS_Element* buf;
-        buf = new TS_Element();
-        buf.set_fields(High[1], Low[1], Open[1], Close[1], Time[1]);
-
-        rt.Iterate_charts(buf);
-        delete(buf);
-
-    }
-    
-
-    BarsOnChart = Bars;
+    rt.Iterate_charts();
 
 //--- return value of prev_calculated for next call
    return(rates_total);
@@ -108,6 +78,10 @@ int OnCalculate(const int rates_total,
 //+------------------------------------------------------------------+
 
 int OnInit() {
+
+   if (Period() != base_chart_period) {
+     return(INIT_SUCCEEDED);
+   }
 
    cfg.set_pips();
    rt.push_array("30m", rt.TS_chart_name);

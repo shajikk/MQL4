@@ -14,6 +14,8 @@ class ParseTS : public SR_Base {
 
     uint name_counter;
 
+    int     BarsOnChart; 
+
     bool    r_already_added;
     bool    s_already_added;
 
@@ -41,6 +43,7 @@ class ParseTS : public SR_Base {
       this.r_already_added = false; 
       this.s_already_added = false; 
       this.name_counter = 0;
+      this.BarsOnChart = 0;
     };
 
 };
